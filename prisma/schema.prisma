@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ID        String   @id @default(cuid())
+  email     String?  @unique
+  password  String?
+  roles     Role[]
+  phone     String?  @unique
+  parent    Parent?
+  googleID  String?  @unique
+  photo     String?
+}
+
+model Parent {
+  ID        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userID    String?  @unique
+  children  Child[]
+  user      User?    @relation(fields: [userID], references: [ID])
+}
+
+model Child {
+  ID        String      @id @default(cuid())
+  pin       String
+  parentID  String
+  name      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  parent    Parent      @relation(fields: [parentID], references: [ID])
+  GameScore GameScore[]
+
+  @@index([parentID], map: "idx_parentID")
+}
+
+model Game {
+  ID        String      @id @default(cuid())
+  name      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  GameLevel GameLevel[]
+}
+
+model GameLevel {
+  ID        String      @id @default(cuid())
+  level     Int
+  gameID    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  game      Game        @relation(fields: [gameID], references: [ID])
+  GameScore GameScore[]
+
+  @@index([gameID], map: "idx_gameID")
+}
+
+model GameScore {
+  ID        String    @id @default(cuid())
+  score     Int
+  childID   String
+  levelID   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  child     Child     @relation(fields: [childID], references: [ID])
+  level     GameLevel @relation(fields: [levelID], references: [ID])
+  completed Boolean
+
+  @@index([childID], map: "idx_childID")
+  @@index([levelID], map: "idx_levelID")
+}
+
+enum Role {
+  ADMIN
+  GUEST
+  PARENT
+}
